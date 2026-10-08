@@ -29,6 +29,11 @@ class Process implements Runnable {
     private int remainingTime; 
     private int priority;
 
+    // Feature 3: Time Calculations Attributes
+    private int completionTime;
+    private int waitingTime;
+    private int turnaroundTime;
+
     public Process(String name, int burstTime, int timeQuantum, int priority) {
         this.name = name;
         this.burstTime = burstTime;
@@ -41,9 +46,7 @@ class Process implements Runnable {
     public void run() {
         int runTime = Math.min(timeQuantum, remainingTime);
         String quantumBar = createProgressBar(0, 15);
-        System.out.println(Colors.BRIGHT_GREEN + "  ▶ " + Colors.BOLD + 
-        Colors.CYAN + name + Colors.RESET + Colors.GREEN + " executing quantum" + 
-        Colors.RESET + " [" + runTime + "ms] ");
+        System.out.println(Colors.BRIGHT_GREEN + "  ▶ " + Colors.BOLD + Colors.CYAN + name + Colors.RESET + Colors.GREEN + " executing quantum" + Colors.RESET + " [" + runTime + "ms] ");
         
         try {
             int steps = 5;
@@ -63,17 +66,13 @@ class Process implements Runnable {
         int overallProgress = (int) (((double)(burstTime - remainingTime) / burstTime) * 100);
         String overallProgressBar = createProgressBar(overallProgress, 20);
         
-        System.out.println(Colors.YELLOW + "  ⏸ " + Colors.CYAN + name + 
-        Colors.RESET + " completed quantum " + Colors.BRIGHT_YELLOW + runTime + 
-        "ms" + Colors.RESET + " │ Overall progress: " + overallProgressBar);
+        System.out.println(Colors.YELLOW + "  ⏸ " + Colors.CYAN + name + Colors.RESET + " completed quantum " + Colors.BRIGHT_YELLOW + runTime + "ms" + Colors.RESET + " │ Overall progress: " + overallProgressBar);
         System.out.println(Colors.MAGENTA + "     Remaining time: " + remainingTime + "ms" + Colors.RESET);
         
         if (remainingTime > 0) {
-            System.out.println(Colors.BLUE + "  ↻ " + Colors.CYAN + name + 
-            Colors.RESET + " yields CPU for context switch" + Colors.RESET);
+            System.out.println(Colors.BLUE + "  ↻ " + Colors.CYAN + name + Colors.RESET + " yields CPU for context switch" + Colors.RESET);
         } else {
-            System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + Colors.BOLD +
-             Colors.CYAN + name + Colors.RESET + Colors.BRIGHT_GREEN + " finished execution!" + Colors.RESET);
+            System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + Colors.BOLD + Colors.CYAN + name + Colors.RESET + Colors.BRIGHT_GREEN + " finished execution!" + Colors.RESET);
         }
         System.out.println();
     }
@@ -94,15 +93,10 @@ class Process implements Runnable {
 
     public void runToCompletion() {
         try {
-            System.out.println(Colors.BRIGHT_CYAN + "  ⚡ " + 
-            Colors.BOLD + Colors.CYAN + name + Colors.RESET + 
-            Colors.BRIGHT_CYAN + " is the last process, running to completion" + 
-            Colors.RESET + " [" + remainingTime + "ms]");
+            System.out.println(Colors.BRIGHT_CYAN + "  ⚡ " + Colors.BOLD + Colors.CYAN + name + Colors.RESET + Colors.BRIGHT_CYAN + " is the last process, running to completion" + Colors.RESET + " [" + remainingTime + "ms]");
             Thread.sleep(remainingTime);
             remainingTime = 0;
-            System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + 
-            Colors.BOLD + Colors.CYAN + name + Colors.RESET +
-             Colors.BRIGHT_GREEN + " finished execution!" + Colors.RESET);
+            System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + Colors.BOLD + Colors.CYAN + name + Colors.RESET + Colors.BRIGHT_GREEN + " finished execution!" + Colors.RESET);
             System.out.println();
         } catch (InterruptedException e) {
             System.out.println(Colors.RED + "  ✗ " + name + " was interrupted." + Colors.RESET);
@@ -113,6 +107,18 @@ class Process implements Runnable {
     public int getBurstTime() { return burstTime; }
     public int getRemainingTime() { return remainingTime; }
     public int getPriority() { return priority; }
+
+    // Feature 3: Setters and Getters for Metrics
+    public void setCompletionTime(int completionTime) {
+        this.completionTime = completionTime;
+        this.turnaroundTime = completionTime; 
+        this.waitingTime = turnaroundTime - burstTime;
+    }
+
+    public int getCompletionTime() { return completionTime; }
+    public int getWaitingTime() { return waitingTime; }
+    public int getTurnaroundTime() { return turnaroundTime; }
+
     public boolean isFinished() { return remainingTime <= 0; }
 }
 
@@ -127,8 +133,11 @@ public class SchedulerSimulation {
         Queue<Thread> processQueue = new LinkedList<>();
         Map<Thread, Process> processMap = new HashMap<>();
 
-        // Feature 2: Context Switch Counter
         int contextSwitchCount = 0;
+
+        // Feature 3: Tracking global time and completed processes
+        int currentSimulationTime = 0;
+        LinkedList<Process> completedProcessesList = new LinkedList<>();
 
         System.out.println("\n" + Colors.BOLD + Colors.BRIGHT_CYAN + "╔═══════════════════════════════════════════════════════════════════════════════════════╗" + Colors.RESET);
         System.out.println(Colors.BOLD + Colors.BRIGHT_CYAN + "║" + Colors.RESET + Colors.BG_BLUE + Colors.BRIGHT_WHITE + Colors.BOLD + "                         CPU SCHEDULER SIMULATION                               " + Colors.RESET + Colors.BOLD + Colors.BRIGHT_CYAN + "║" + Colors.RESET);
@@ -165,10 +174,9 @@ public class SchedulerSimulation {
             }
             if (queueCount == 0) System.out.print(Colors.YELLOW + "empty" + Colors.RESET);
             System.out.println(Colors.BRIGHT_WHITE + "]" + Colors.RESET);
-            System.out.println(Colors.BOLD + Colors.MAGENTA +
-             "└ -----------------------------------------------------------------" + 
-             Colors.RESET + "\n");
+            System.out.println(Colors.BOLD + Colors.MAGENTA + "└ -----------------------------------------------------------------" + Colors.RESET + "\n");
             
+            int runDuration = Math.min(timeQuantum, process.getRemainingTime());
             currentThread.start();
             try {
                 currentThread.join();
@@ -176,19 +184,27 @@ public class SchedulerSimulation {
                 System.out.println("Main thread interrupted.");
             }
             
+            // Feature 3: Increment current time
+            currentSimulationTime += runDuration;
+            
             if (!process.isFinished()) {
                 if (!processQueue.isEmpty()) {
-                    // Feature 2: Increment Context Switch
                     contextSwitchCount++;
                     addProcessToQueue(process, processQueue, processMap);
                 } else {
-                    System.out.println(Colors.BRIGHT_YELLOW + "  ⚠ " + 
-                    
-            Colors.CYAN + process.getName() + Colors.RESET +
-             Colors.YELLOW + " is the last process → running to completion" +
-              Colors.RESET);
+                    System.out.println(Colors.BRIGHT_YELLOW + "  ⚠ " + Colors.CYAN + process.getName() + Colors.RESET + Colors.YELLOW + " is the last process → running to completion" + Colors.RESET);
+                    int remaining = process.getRemainingTime();
                     process.runToCompletion();
+                    
+                    // Feature 3: Record finish time for single process completion
+                    currentSimulationTime += remaining;
+                    process.setCompletionTime(currentSimulationTime);
+                    completedProcessesList.add(process);
                 }
+            } else {
+                // Feature 3: Record finish time
+                process.setCompletionTime(currentSimulationTime);
+                completedProcessesList.add(process);
             }
         }
         
@@ -196,9 +212,25 @@ public class SchedulerSimulation {
         System.out.println(Colors.BOLD + Colors.BRIGHT_GREEN + "║" + Colors.RESET + Colors.BG_GREEN + Colors.WHITE + Colors.BOLD + "                     ✓  ALL PROCESSES COMPLETED  ✓                              " + Colors.RESET + Colors.BOLD + Colors.BRIGHT_GREEN + "║" + Colors.RESET);
         System.out.println(Colors.BOLD + Colors.BRIGHT_GREEN + "╚════════════════════════════════════════════════════════════════════════════════╝" + Colors.RESET + "\n");
 
-        // Feature 2: Display Context Switch Counter
-        System.out.println(Colors.BOLD + Colors.YELLOW + "Total Context Switches: " + 
-        Colors.RESET + contextSwitchCount + "\n");
+        // Feature 3: Display Timing Summary and Averages
+        double totalWaitingTime = 0;
+        double totalTurnaroundTime = 0;
+
+        System.out.println(Colors.BOLD + Colors.BRIGHT_CYAN + "=== PERFORMANCE & TIMING SUMMARY ===" + Colors.RESET);
+        System.out.printf(Colors.BOLD + "%-10s %-12s %-10s %-16s %-16s\n" + Colors.RESET, "Process", "Burst Time", "Priority", "Waiting Time", "Turnaround Time");
+        System.out.println("------------------------------------------------------------------");
+
+        for (Process p : completedProcessesList) {
+            System.out.printf("%-10s %-12d %-10d %-16d %-16d\n", 
+                              p.getName(), p.getBurstTime(), p.getPriority(), p.getWaitingTime(), p.getTurnaroundTime());
+            totalWaitingTime += p.getWaitingTime();
+            totalTurnaroundTime += p.getTurnaroundTime();
+        }
+
+        System.out.println("------------------------------------------------------------------");
+        System.out.println(Colors.BOLD + Colors.YELLOW + "Total Context Switches: " + Colors.RESET + contextSwitchCount);
+        System.out.printf(Colors.BOLD + Colors.GREEN + "Average Waiting Time: %.2f ms\n" + Colors.RESET, (totalWaitingTime / numProcesses));
+        System.out.printf(Colors.BOLD + Colors.GREEN + "Average Turnaround Time: %.2f ms\n\n" + Colors.RESET, (totalTurnaroundTime / numProcesses));
     }
     
     public static void addProcessToQueue(Process process, Queue<Thread> processQueue, Map<Thread, Process> processMap) {
@@ -206,10 +238,6 @@ public class SchedulerSimulation {
         processQueue.add(thread);
         processMap.put(thread, process);
         
-        System.out.println(Colors.BLUE + "  ➕ " + Colors.BOLD +
-         Colors.CYAN + process.getName() + Colors.RESET + Colors.BLUE +
-          " added to ready queue" + Colors.RESET + " │ Burst time: " + 
-          Colors.YELLOW + process.getBurstTime() + "ms" + Colors.RESET + " │ Priority: " + 
-          Colors.MAGENTA + process.getPriority() + Colors.RESET);
+        System.out.println(Colors.BLUE + "  ➕ " + Colors.BOLD + Colors.CYAN + process.getName() + Colors.RESET + Colors.BLUE + " added to ready queue" + Colors.RESET + " │ Burst time: " + Colors.YELLOW + process.getBurstTime() + "ms" + Colors.RESET + " │ Priority: " + Colors.MAGENTA + process.getPriority() + Colors.RESET);
     }
 }
