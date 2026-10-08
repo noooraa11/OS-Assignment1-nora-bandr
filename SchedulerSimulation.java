@@ -221,7 +221,7 @@ public class SchedulerSimulation {
             Thread currentThread = processQueue.poll(); // Dequeues the next thread
             
             // Print the current process queue (list of process IDs in the queue)
-            System.out.println(Colors.BOLD + Colors.MAGENTA + "┌─ Ready Queue " + "─".repeat(65) + Colors.RESET);
+         System.out.println(Colors.BOLD + Colors.MAGENTA + "┌ Ready Queue -----------------------------------------------------------------" + Colors.RESET);
             System.out.print(Colors.MAGENTA + "│ " + Colors.RESET + Colors.BRIGHT_WHITE + "[" + Colors.RESET);
             int queueCount = 0;
             for (Thread thread : processQueue) {
@@ -234,7 +234,7 @@ public class SchedulerSimulation {
                 System.out.print(Colors.YELLOW + "empty" + Colors.RESET);
             }
             System.out.println(Colors.BRIGHT_WHITE + "]" + Colors.RESET);
-            System.out.println(Colors.BOLD + Colors.MAGENTA + "└" + "─".repeat(79) + Colors.RESET + "\n");
+         System.out.println(Colors.BOLD + Colors.MAGENTA + "└ -----------------------------------------------------------------" + Colors.RESET +"\n");
             
             // Start the thread, which will run the process for one time quantum
             currentThread.start();
