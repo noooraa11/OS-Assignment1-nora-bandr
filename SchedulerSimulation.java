@@ -27,8 +27,6 @@ class Process implements Runnable {
     private int burstTime; 
     private int timeQuantum; 
     private int remainingTime; 
-
-    // Feature 1: Process Priority
     private int priority;
 
     public Process(String name, int burstTime, int timeQuantum, int priority) {
@@ -43,9 +41,9 @@ class Process implements Runnable {
     public void run() {
         int runTime = Math.min(timeQuantum, remainingTime);
         String quantumBar = createProgressBar(0, 15);
-        System.out.println(Colors.BRIGHT_GREEN + "  ▶ " + Colors.BOLD + Colors.CYAN + name + 
-                           Colors.RESET + Colors.GREEN + " executing quantum" + Colors.RESET + 
-                           " [" + runTime + "ms] ");
+        System.out.println(Colors.BRIGHT_GREEN + "  ▶ " + Colors.BOLD + 
+        Colors.CYAN + name + Colors.RESET + Colors.GREEN + " executing quantum" + 
+        Colors.RESET + " [" + runTime + "ms] ");
         
         try {
             int steps = 5;
@@ -65,15 +63,17 @@ class Process implements Runnable {
         int overallProgress = (int) (((double)(burstTime - remainingTime) / burstTime) * 100);
         String overallProgressBar = createProgressBar(overallProgress, 20);
         
-        System.out.println(Colors.YELLOW + "  ⏸ " + Colors.CYAN + name + Colors.RESET + 
-                           " completed quantum " + Colors.BRIGHT_YELLOW + runTime + "ms" + Colors.RESET + 
-                           " │ Overall progress: " + overallProgressBar);
+        System.out.println(Colors.YELLOW + "  ⏸ " + Colors.CYAN + name + 
+        Colors.RESET + " completed quantum " + Colors.BRIGHT_YELLOW + runTime + 
+        "ms" + Colors.RESET + " │ Overall progress: " + overallProgressBar);
         System.out.println(Colors.MAGENTA + "     Remaining time: " + remainingTime + "ms" + Colors.RESET);
         
         if (remainingTime > 0) {
-            System.out.println(Colors.BLUE + "  ↻ " + Colors.CYAN + name + Colors.RESET + " yields CPU for context switch" + Colors.RESET);
+            System.out.println(Colors.BLUE + "  ↻ " + Colors.CYAN + name + 
+            Colors.RESET + " yields CPU for context switch" + Colors.RESET);
         } else {
-            System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + Colors.BOLD + Colors.CYAN + name + Colors.RESET + Colors.BRIGHT_GREEN + " finished execution!" + Colors.RESET);
+            System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + Colors.BOLD +
+             Colors.CYAN + name + Colors.RESET + Colors.BRIGHT_GREEN + " finished execution!" + Colors.RESET);
         }
         System.out.println();
     }
@@ -94,13 +94,15 @@ class Process implements Runnable {
 
     public void runToCompletion() {
         try {
-            System.out.println(Colors.BRIGHT_CYAN + "  ⚡ " + Colors.BOLD + Colors.CYAN + name + 
-                               Colors.RESET + Colors.BRIGHT_CYAN + " is the last process, running to completion" + 
-                               Colors.RESET + " [" + remainingTime + "ms]");
+            System.out.println(Colors.BRIGHT_CYAN + "  ⚡ " + 
+            Colors.BOLD + Colors.CYAN + name + Colors.RESET + 
+            Colors.BRIGHT_CYAN + " is the last process, running to completion" + 
+            Colors.RESET + " [" + remainingTime + "ms]");
             Thread.sleep(remainingTime);
             remainingTime = 0;
-            System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + Colors.BOLD + Colors.CYAN + name + 
-                               Colors.RESET + Colors.BRIGHT_GREEN + " finished execution!" + Colors.RESET);
+            System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + 
+            Colors.BOLD + Colors.CYAN + name + Colors.RESET +
+             Colors.BRIGHT_GREEN + " finished execution!" + Colors.RESET);
             System.out.println();
         } catch (InterruptedException e) {
             System.out.println(Colors.RED + "  ✗ " + name + " was interrupted." + Colors.RESET);
@@ -124,6 +126,9 @@ public class SchedulerSimulation {
         
         Queue<Thread> processQueue = new LinkedList<>();
         Map<Thread, Process> processMap = new HashMap<>();
+
+        // Feature 2: Context Switch Counter
+        int contextSwitchCount = 0;
 
         System.out.println("\n" + Colors.BOLD + Colors.BRIGHT_CYAN + "╔═══════════════════════════════════════════════════════════════════════════════════════╗" + Colors.RESET);
         System.out.println(Colors.BOLD + Colors.BRIGHT_CYAN + "║" + Colors.RESET + Colors.BG_BLUE + Colors.BRIGHT_WHITE + Colors.BOLD + "                         CPU SCHEDULER SIMULATION                               " + Colors.RESET + Colors.BOLD + Colors.BRIGHT_CYAN + "║" + Colors.RESET);
@@ -160,7 +165,9 @@ public class SchedulerSimulation {
             }
             if (queueCount == 0) System.out.print(Colors.YELLOW + "empty" + Colors.RESET);
             System.out.println(Colors.BRIGHT_WHITE + "]" + Colors.RESET);
-            System.out.println(Colors.BOLD + Colors.MAGENTA + "└ -----------------------------------------------------------------" + Colors.RESET + "\n");
+            System.out.println(Colors.BOLD + Colors.MAGENTA +
+             "└ -----------------------------------------------------------------" + 
+             Colors.RESET + "\n");
             
             currentThread.start();
             try {
@@ -171,19 +178,27 @@ public class SchedulerSimulation {
             
             if (!process.isFinished()) {
                 if (!processQueue.isEmpty()) {
+                    // Feature 2: Increment Context Switch
+                    contextSwitchCount++;
                     addProcessToQueue(process, processQueue, processMap);
                 } else {
-                    System.out.println(Colors.BRIGHT_YELLOW + "  ⚠ " + Colors.CYAN + process.getName() + Colors.RESET + Colors.YELLOW + " is the last process → running to completion" + Colors.RESET);
+                    System.out.println(Colors.BRIGHT_YELLOW + "  ⚠ " + 
+                    
+            Colors.CYAN + process.getName() + Colors.RESET +
+             Colors.YELLOW + " is the last process → running to completion" +
+              Colors.RESET);
                     process.runToCompletion();
                 }
             }
         }
         
-        System.out.println(Colors.BOLD + Colors.BRIGHT_GREEN +
-         "╔════════════════════════════════════════════════════════════════════════════════╗" 
-         + Colors.RESET);
+        System.out.println(Colors.BOLD + Colors.BRIGHT_GREEN + "╔════════════════════════════════════════════════════════════════════════════════╗" + Colors.RESET);
         System.out.println(Colors.BOLD + Colors.BRIGHT_GREEN + "║" + Colors.RESET + Colors.BG_GREEN + Colors.WHITE + Colors.BOLD + "                     ✓  ALL PROCESSES COMPLETED  ✓                              " + Colors.RESET + Colors.BOLD + Colors.BRIGHT_GREEN + "║" + Colors.RESET);
         System.out.println(Colors.BOLD + Colors.BRIGHT_GREEN + "╚════════════════════════════════════════════════════════════════════════════════╝" + Colors.RESET + "\n");
+
+        // Feature 2: Display Context Switch Counter
+        System.out.println(Colors.BOLD + Colors.YELLOW + "Total Context Switches: " + 
+        Colors.RESET + contextSwitchCount + "\n");
     }
     
     public static void addProcessToQueue(Process process, Queue<Thread> processQueue, Map<Thread, Process> processMap) {
@@ -191,11 +206,10 @@ public class SchedulerSimulation {
         processQueue.add(thread);
         processMap.put(thread, process);
         
-        System.out.println(Colors.BLUE + "  ➕ " + 
-        Colors.BOLD + Colors.CYAN + process.getName() + 
-        Colors.RESET + Colors.BLUE + " added to ready queue" + 
-        Colors.RESET + " │ Burst time: " + Colors.YELLOW + process.getBurstTime()
-         + "ms" + Colors.RESET + " │ Priority: " + Colors.MAGENTA +
-          process.getPriority() + Colors.RESET);
+        System.out.println(Colors.BLUE + "  ➕ " + Colors.BOLD +
+         Colors.CYAN + process.getName() + Colors.RESET + Colors.BLUE +
+          " added to ready queue" + Colors.RESET + " │ Burst time: " + 
+          Colors.YELLOW + process.getBurstTime() + "ms" + Colors.RESET + " │ Priority: " + 
+          Colors.MAGENTA + process.getPriority() + Colors.RESET);
     }
 }
