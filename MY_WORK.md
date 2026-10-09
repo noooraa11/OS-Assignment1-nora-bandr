@@ -16,7 +16,7 @@
 
 ## 🎥 Video Link
 
-**Video Link**: [ضع_رابط_الفيديو_هنا]
+**Video Link**: [ https://canva.link/jowcvuztkgpcagr ]
 
 ---
 
